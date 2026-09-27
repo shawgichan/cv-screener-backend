@@ -118,7 +118,16 @@ func evaluateHandler(cfg config.Config, extractionLimiter *rate.Limiter, scoring
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(cfg.APITimeoutSecs)*time.Second)
 		defer cancel()
 
+		reqID := fmt.Sprintf("req-%d", time.Now().UnixNano())
+		start := time.Now()
+
 		results := scorer.ProcessBatch(ctx, cfg, extractionLimiter, scoringLimiter, req.JobDescription, req.CVs)
+		
+		slog.Info("batch evaluated", 
+			"req_id", reqID, 
+			"cv_count", len(req.CVs), 
+			"duration_ms", time.Since(start).Milliseconds(),
+		)
 
 		sort.Slice(results, func(i, j int) bool {
 			return results[i].Result.Score > results[j].Result.Score
